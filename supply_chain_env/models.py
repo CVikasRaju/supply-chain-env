@@ -204,7 +204,7 @@ Observation.model_rebuild()
 # ---------------------------------------------------------------------------
 
 class ResetRequest(BaseModel):
-    task_id: str = Field(description="'easy' | 'medium' | 'hard'")
+    task_id: str = Field(default="easy", description="'easy' | 'medium' | 'hard'")
     seed: Optional[int] = None
     config_overrides: Dict = Field(default_factory=dict)
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 import os, yaml
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
+from typing import Optional
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -34,7 +35,9 @@ def health():
 
 
 @app.post("/reset")
-def reset(request: ResetRequest):
+def reset(request: Optional[ResetRequest] = None):
+    if request is None:
+        request = ResetRequest(task_id="easy")
     try:
         return _env.reset(request)
     except ValueError as e:
