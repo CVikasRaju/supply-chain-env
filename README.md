@@ -294,13 +294,13 @@ supply-chain-env/
 
 ```bash
 git init
-git remote add origin https://huggingface.co/spaces/YOUR_NAME/supply-chain-env
+git remote add origin https://huggingface.co/spaces/cvikasraju/supply-chain-env
 git add .
 git commit -m "initial"
 git push origin main
 ```
 
-The API will be live at `https://YOUR_NAME-supply-chain-env.hf.space`.
+The API will be live at `https://cvikasraju-supply-chain-env.hf.space`.
 
 ---
 
@@ -332,7 +332,7 @@ The API will be live at `https://YOUR_NAME-supply-chain-env.hf.space`.
 @software{supply_chain_disruption_navigator,
   title  = {Supply Chain Disruption Navigator: An OpenEnv Environment},
   year   = {2025},
-  url    = {https://huggingface.co/spaces/YOUR_NAME/supply-chain-env}
+  url    = {https://huggingface.co/spaces/cvikasraju/supply-chain-env}
 }
 ```
 
