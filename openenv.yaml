@@ -1,0 +1,96 @@
+name: supply_chain_disruption_navigator
+version: "1.0.0"
+description: >
+  A multi-tier supplier network crisis management environment.
+  An AI agent controls a 12-supplier, 4-tier supply chain under
+  stochastic disruptions (port strikes, weather, geopolitical blocks,
+  factory fires, quality failures). The agent must reroute orders,
+  manage safety stock, expedite shipments, accept substitutes, and
+  negotiate lead times to keep an OEM factory running.
+
+author: "Supply Chain OpenEnv"
+license: MIT
+tags: [supply-chain, logistics, operations, crisis-management, real-world]
+
+tasks:
+  - id: easy
+    description: "Single T2 supplier factory fire. Full visibility. 30 days."
+    difficulty: easy
+    episode_length: 30
+    reward_range: [0.0, 1.0]
+
+  - id: medium
+    description: "Geopolitical block cascading T4→T3. Partial info. 60 days."
+    difficulty: medium
+    episode_length: 60
+    reward_range: [0.0, 1.0]
+
+  - id: hard
+    description: "Adversarial multi-tier disruptions. No forecast. ESG + cost. 90 days."
+    difficulty: hard
+    episode_length: 90
+    reward_range: [0.0, 1.0]
+
+observation_space:
+  type: structured
+  description: >
+    Typed Pydantic model (Observation). Key fields:
+    - suppliers: Dict[supplier_id, SupplierState] — capacity, inventory, lead time
+    - active_disruptions: Dict[id, ActiveDisruption] — type, severity, duration
+    - current_routes: List[OrderRoute] — active material flow edges
+    - production_lines: List[ProductionLine] — throughput, demand
+    - fill_rate: float [0,1] — fraction of demand met
+    - inventory_coverage_days: float — OEM buffer
+    - total_cost_today: float
+    - cost_vs_baseline: float
+    - on_time_delivery_rate: float [0,1]
+    - esg_score_weighted: float [0,1]
+    - disruption_forecast: List[ActiveDisruption] (empty in hard mode)
+    - reward_breakdown: RewardBreakdown (partial signals)
+
+action_space:
+  type: structured
+  description: >
+    MultiAction wrapping a list of Action objects. Each action has:
+    action_type: one of [reroute_order, adjust_safety_stock, expedite_shipment,
+                         accept_substitute, negotiate_lead_time, do_nothing]
+    Plus type-specific fields (supplier IDs, quantities, cost premiums, etc.)
+
+reward:
+  type: continuous
+  range: [0.0, 1.0]
+  description: >
+    Weighted product of:
+      - production_continuity (0.40–0.60): fraction of demand met
+      - cost_efficiency (0.20–0.25): 1 - cost_overrun vs baseline
+      - esg_compliance (0.10–0.20): weighted avg ESG score of suppliers
+      - lead_time_adherence (0.10–0.15): on-time delivery fraction
+    Plus resilience_bonus (up to +0.20) for proactive safety stock building.
+
+api:
+  reset:
+    method: POST
+    path: /reset
+    body: ResetRequest
+    response: ResetResponse
+
+  step:
+    method: POST
+    path: /step
+    body: MultiAction
+    response: Observation
+
+  state:
+    method: GET
+    path: /state
+    response: StateResponse
+
+baselines:
+  heuristic:
+    easy:   ~0.72
+    medium: ~0.58
+    hard:   ~0.41
+  random:
+    easy:   ~0.35
+    medium: ~0.28
+    hard:   ~0.18
