@@ -14,6 +14,7 @@ API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 TASK_NAME = os.getenv("TASK_NAME", "easy")
 BENCHMARK = os.getenv("BENCHMARK", "supply-chain-env")
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "")
 TEMPERATURE = 0.2
 MAX_TOKENS = 512
 
@@ -48,6 +49,8 @@ def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
 def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+    if error:
+        error = error.replace("\n", " ").replace("\r", " ")
     error_val = error if error else "null"
     done_val = str(done).lower()
     print(
@@ -57,7 +60,8 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
+
 
 def build_user_prompt(step: int, obs_json: str, last_reward: float, history: List[str]) -> str:
     history_block = "\n".join(history[-4:]) if history else "None"
