@@ -13,3 +13,4 @@ wheels/
 __pycache__/
 .git/
 upload.py
+.env
