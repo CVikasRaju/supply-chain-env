@@ -13,4 +13,7 @@ COPY . .
 
 EXPOSE 7860
 
-CMD ["python", "server/app.py"]
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:7860/health || exit 1
+
+CMD ["python", "main.py"]
