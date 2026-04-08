@@ -9,6 +9,9 @@ from openai import OpenAI
 from supply_chain_env import SupplyChainEnv, ResetRequest, MultiAction, Action, ActionType
 from supply_chain_env.reward import episode_score
 
+from dotenv import load_dotenv
+load_dotenv()
+
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "dummy_key")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
