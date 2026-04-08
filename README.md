@@ -331,13 +331,7 @@ The API will be live at `https://cvikasraju-supply-chain-env.hf.space`.
 ```bibtex
 @software{supply_chain_disruption_navigator,
   title  = {Supply Chain Disruption Navigator: An OpenEnv Environment},
-  year   = {2025},
+  year   = {2026},
   url    = {https://huggingface.co/spaces/cvikasraju/supply-chain-env}
 }
 ```
-
----
-
-## License
-
-MIT
