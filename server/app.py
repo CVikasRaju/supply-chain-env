@@ -6,6 +6,8 @@ Endpoints:
   POST /step         MultiAction   → Observation
   GET  /state                      → StateResponse
   GET  /health                     → {"status": "ok"}
+  GET  /metadata                   → name, description, version
+  GET  /tasks                      → list of task definitions with grader info
   GET  /openenv.yaml               → spec manifest
 """
 from __future__ import annotations
@@ -58,6 +60,54 @@ def state():
         return _env.state()
     except RuntimeError as e:
         raise HTTPException(status_code=409, detail=str(e))
+
+
+@app.get("/metadata")
+def metadata():
+    return {
+        "name": "supply_chain_disruption_navigator",
+        "description": (
+            "A multi-tier supplier network crisis management environment. "
+            "An AI agent controls a 12-supplier, 4-tier supply chain under "
+            "stochastic disruptions (port strikes, weather, geopolitical blocks, "
+            "factory fires, quality failures)."
+        ),
+        "version": "1.0.0",
+        "author": "cvikasraju",
+        "tags": ["supply-chain", "logistics", "operations", "crisis-management", "real-world"],
+    }
+
+
+@app.get("/tasks")
+def get_tasks():
+    return {
+        "tasks": [
+            {
+                "id": "easy",
+                "description": "Single T2 supplier factory fire. Full visibility. 30 days.",
+                "difficulty": "easy",
+                "episode_length": 30,
+                "reward_range": [0.0, 1.0],
+                "grader": "graders/grader_easy.py::EasyGrader",
+            },
+            {
+                "id": "medium",
+                "description": "Geopolitical block cascading T4\u2192T3. Partial info. 60 days.",
+                "difficulty": "medium",
+                "episode_length": 60,
+                "reward_range": [0.0, 1.0],
+                "grader": "graders/grader_medium.py::MediumGrader",
+            },
+            {
+                "id": "hard",
+                "description": "Adversarial multi-tier disruptions. No forecast. ESG + cost. 90 days.",
+                "difficulty": "hard",
+                "episode_length": 90,
+                "reward_range": [0.0, 1.0],
+                "grader": "graders/grader_hard.py::HardGrader",
+            },
+        ]
+    }
 
 
 @app.get("/openenv.yaml", response_class=PlainTextResponse)
