@@ -179,27 +179,30 @@ def get_tasks():
         "tasks": [
             {
                 "id": "easy",
+                "name": "Easy - Factory Fire",
                 "description": "Single T2 supplier factory fire. Full visibility. 30 days.",
                 "difficulty": "easy",
                 "episode_length": 30,
                 "reward_range": [0.0, 1.0],
-                "grader": "graders.grader_easy:EasyGrader",
+                "grader": "graders.grader_easy:grade",
             },
             {
                 "id": "medium",
+                "name": "Medium - Geopolitical Block",
                 "description": "Geopolitical block cascading T4→T3. Partial info. 60 days.",
                 "difficulty": "medium",
                 "episode_length": 60,
                 "reward_range": [0.0, 1.0],
-                "grader": "graders.grader_medium:MediumGrader",
+                "grader": "graders.grader_medium:grade",
             },
             {
                 "id": "hard",
+                "name": "Hard - Multi-Tier Adversarial",
                 "description": "Adversarial multi-tier disruptions. No forecast. ESG + cost. 90 days.",
                 "difficulty": "hard",
                 "episode_length": 90,
                 "reward_range": [0.0, 1.0],
-                "grader": "graders.grader_hard:HardGrader",
+                "grader": "graders.grader_hard:grade",
             },
         ]
     }
