@@ -1,20 +1,23 @@
 """
 FastAPI HTTP wrapper — exposes the OpenEnv step/reset/state API.
 
-Endpoints:
+Endpoints (openenv-http/1.x standard):
   POST /reset        ResetRequest  → ResetResponse
   POST /step         MultiAction   → Observation
   GET  /state                      → StateResponse
-  GET  /health                     → {"status": "ok"}
-  GET  /metadata                   → name, description, version
+  GET  /health                     → {"status": "healthy"}  [required by validator]
+  GET  /metadata                   → name, description      [required by validator]
+  GET  /schema                     → action/observation/state schemas [required]
+  POST /mcp                        → JSON-RPC 2.0 payload   [required by validator]
   GET  /tasks                      → list of task definitions with grader info
   GET  /openenv.yaml               → spec manifest
 """
 from __future__ import annotations
 import os, yaml
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import PlainTextResponse
-from typing import Optional
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import PlainTextResponse, JSONResponse
+from pydantic import BaseModel
+from typing import Optional, Any
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -31,11 +34,178 @@ app = FastAPI(
 _env = SupplyChainEnv()
 
 
+# ── Required by openenv validate: status must be "healthy" ──────────────────
 @app.get("/health")
 def health():
-    return {"status": "ok", "env": "supply_chain_disruption_navigator", "version": "1.0.0"}
+    return {"status": "healthy", "env": "supply_chain_disruption_navigator", "version": "1.0.0"}
 
 
+# ── Required by openenv validate ────────────────────────────────────────────
+@app.get("/metadata")
+def metadata():
+    return {
+        "name": "supply_chain_disruption_navigator",
+        "description": (
+            "A multi-tier supplier network crisis management environment. "
+            "An AI agent controls a 12-supplier, 4-tier supply chain under "
+            "stochastic disruptions (port strikes, weather, geopolitical blocks, "
+            "factory fires, quality failures)."
+        ),
+        "version": "1.0.0",
+        "author": "cvikasraju",
+        "tags": ["supply-chain", "logistics", "operations", "crisis-management", "real-world"],
+    }
+
+
+# ── Required by openenv validate: action, observation, state schemas ─────────
+@app.get("/schema")
+def schema():
+    return {
+        "action": {
+            "type": "object",
+            "description": "MultiAction containing a list of Action objects",
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "action_type": {
+                                "type": "string",
+                                "enum": [
+                                    "reroute_order",
+                                    "adjust_safety_stock",
+                                    "expedite_shipment",
+                                    "accept_substitute",
+                                    "negotiate_lead_time",
+                                    "do_nothing",
+                                ],
+                            },
+                            "supplier_id": {"type": "string"},
+                            "target_supplier_id": {"type": "string"},
+                            "quantity": {"type": "number"},
+                            "cost_premium": {"type": "number"},
+                        },
+                        "required": ["action_type"],
+                    },
+                }
+            },
+            "required": ["actions"],
+        },
+        "observation": {
+            "type": "object",
+            "description": "Supply chain state observation",
+            "properties": {
+                "suppliers": {"type": "object"},
+                "active_disruptions": {"type": "object"},
+                "current_routes": {"type": "array"},
+                "production_lines": {"type": "array"},
+                "fill_rate": {"type": "number"},
+                "inventory_coverage_days": {"type": "number"},
+                "total_cost_today": {"type": "number"},
+                "cost_vs_baseline": {"type": "number"},
+                "on_time_delivery_rate": {"type": "number"},
+                "esg_score_weighted": {"type": "number"},
+                "disruption_forecast": {"type": "array"},
+                "reward_breakdown": {"type": "object"},
+                "is_done": {"type": "boolean"},
+                "is_truncated": {"type": "boolean"},
+                "step": {"type": "integer"},
+                "info": {"type": "object"},
+            },
+        },
+        "state": {
+            "type": "object",
+            "description": "Episode state metadata",
+            "properties": {
+                "episode_id": {"type": "string"},
+                "task_id": {"type": "string"},
+                "step_count": {"type": "integer"},
+                "episode_length": {"type": "integer"},
+                "is_done": {"type": "boolean"},
+            },
+        },
+    }
+
+
+# ── Required by openenv validate: MCP JSON-RPC 2.0 endpoint ─────────────────
+@app.post("/mcp")
+async def mcp(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    method = body.get("method", "")
+    req_id = body.get("id", 1)
+
+    # Respond to initialize and tools/list; generic error for others
+    if method == "initialize":
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {"tools": {}},
+                "serverInfo": {
+                    "name": "supply_chain_disruption_navigator",
+                    "version": "1.0.0",
+                },
+            },
+        }
+    elif method == "tools/list":
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {
+                "tools": [
+                    {"name": "reset", "description": "Reset the supply chain environment"},
+                    {"name": "step", "description": "Take a step in the environment"},
+                    {"name": "state", "description": "Get current episode state"},
+                ]
+            },
+        }
+    else:
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32601, "message": f"Method not found: {method}"},
+        }
+
+
+# ── Tasks with graders (module-dot-path format) ──────────────────────────────
+@app.get("/tasks")
+def get_tasks():
+    return {
+        "tasks": [
+            {
+                "id": "easy",
+                "description": "Single T2 supplier factory fire. Full visibility. 30 days.",
+                "difficulty": "easy",
+                "episode_length": 30,
+                "reward_range": [0.0, 1.0],
+                "grader": "graders.grader_easy:EasyGrader",
+            },
+            {
+                "id": "medium",
+                "description": "Geopolitical block cascading T4→T3. Partial info. 60 days.",
+                "difficulty": "medium",
+                "episode_length": 60,
+                "reward_range": [0.0, 1.0],
+                "grader": "graders.grader_medium:MediumGrader",
+            },
+            {
+                "id": "hard",
+                "description": "Adversarial multi-tier disruptions. No forecast. ESG + cost. 90 days.",
+                "difficulty": "hard",
+                "episode_length": 90,
+                "reward_range": [0.0, 1.0],
+                "grader": "graders.grader_hard:HardGrader",
+            },
+        ]
+    }
+
+
+# ── Core simulation endpoints ─────────────────────────────────────────────────
 @app.post("/reset")
 def reset(request: Optional[ResetRequest] = None):
     if request is None:
@@ -60,54 +230,6 @@ def state():
         return _env.state()
     except RuntimeError as e:
         raise HTTPException(status_code=409, detail=str(e))
-
-
-@app.get("/metadata")
-def metadata():
-    return {
-        "name": "supply_chain_disruption_navigator",
-        "description": (
-            "A multi-tier supplier network crisis management environment. "
-            "An AI agent controls a 12-supplier, 4-tier supply chain under "
-            "stochastic disruptions (port strikes, weather, geopolitical blocks, "
-            "factory fires, quality failures)."
-        ),
-        "version": "1.0.0",
-        "author": "cvikasraju",
-        "tags": ["supply-chain", "logistics", "operations", "crisis-management", "real-world"],
-    }
-
-
-@app.get("/tasks")
-def get_tasks():
-    return {
-        "tasks": [
-            {
-                "id": "easy",
-                "description": "Single T2 supplier factory fire. Full visibility. 30 days.",
-                "difficulty": "easy",
-                "episode_length": 30,
-                "reward_range": [0.0, 1.0],
-                "grader": "graders/grader_easy.py::EasyGrader",
-            },
-            {
-                "id": "medium",
-                "description": "Geopolitical block cascading T4\u2192T3. Partial info. 60 days.",
-                "difficulty": "medium",
-                "episode_length": 60,
-                "reward_range": [0.0, 1.0],
-                "grader": "graders/grader_medium.py::MediumGrader",
-            },
-            {
-                "id": "hard",
-                "description": "Adversarial multi-tier disruptions. No forecast. ESG + cost. 90 days.",
-                "difficulty": "hard",
-                "episode_length": 90,
-                "reward_range": [0.0, 1.0],
-                "grader": "graders/grader_hard.py::HardGrader",
-            },
-        ]
-    }
 
 
 @app.get("/openenv.yaml", response_class=PlainTextResponse)

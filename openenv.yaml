@@ -1,6 +1,10 @@
 name: supply_chain_disruption_navigator
 version: "1.0.0"
-spec_version: "1.0"
+spec_version: "1"
+type: space
+runtime: fastapi
+app: main:app
+port: 7860
 description: >
   A multi-tier supplier network crisis management environment.
   An AI agent controls a 12-supplier, 4-tier supply chain under
@@ -19,21 +23,21 @@ tasks:
     difficulty: easy
     episode_length: 30
     reward_range: [0.0, 1.0]
-    grader: "graders/grader_easy.py::EasyGrader"
+    grader: "graders.grader_easy:EasyGrader"
 
   - id: medium
     description: "Geopolitical block cascading T4→T3. Partial info. 60 days."
     difficulty: medium
     episode_length: 60
     reward_range: [0.0, 1.0]
-    grader: "graders/grader_medium.py::MediumGrader"
+    grader: "graders.grader_medium:MediumGrader"
 
   - id: hard
     description: "Adversarial multi-tier disruptions. No forecast. ESG + cost. 90 days."
     difficulty: hard
     episode_length: 90
     reward_range: [0.0, 1.0]
-    grader: "graders/grader_hard.py::HardGrader"
+    grader: "graders.grader_hard:HardGrader"
 
 observation_space:
   type: structured
