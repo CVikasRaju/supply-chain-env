@@ -27,7 +27,28 @@ from .reward import compute_reward, episode_score
 # ---------------------------------------------------------------------------
 
 TASK_CONFIGS: Dict[str, Dict] = {
+    "baseline": dict(
+        description=(
+            "Baseline operations: 20 days of steady-state simulation. "
+            "No forced disruptions. Used for calibration."
+        ),
+        episode_length=20,
+        base_fire_probability=0.0,
+        max_concurrent=0,
+        cascade_enabled=False,
+        partial_info=False,
+        adversarial=False,
+        forced_disruptions=[],
+        reward_weights=dict(
+            production_continuity=0.50,
+            cost_efficiency=0.30,
+            esg_compliance=0.10,
+            lead_time_adherence=0.10,
+        ),
+        cost_tolerance=0.50,
+    ),
     "easy": dict(
+
         description=(
             "Single-tier crisis: one T2 component supplier goes down. "
             "Agent must reroute orders and maintain production. "

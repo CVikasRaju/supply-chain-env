@@ -13,7 +13,8 @@ from typing import Callable, Any, Optional
 AgentFn = Callable[[Any], Any]
 
 
-def grade(agent_fn: Optional[AgentFn] = None, seed: int = 42) -> dict:
+def grade(agent_fn: Optional[AgentFn] = None, seed: int = 42, **kwargs) -> dict:
+
     """
     Top-level grade function for the 'hard' task.
     Called by the OpenEnv validator via: graders.grader_hard:grade

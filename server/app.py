@@ -178,7 +178,17 @@ def get_tasks():
     return {
         "tasks": [
             {
+                "id": "baseline",
+                "name": "Baseline - Smooth Operations",
+                "description": "Steady-state operations with no forced disruptions. 20 days.",
+                "difficulty": "easy",
+                "episode_length": 20,
+                "reward_range": [0.0, 1.0],
+                "grader": "graders.grader_baseline:grade",
+            },
+            {
                 "id": "easy",
+
                 "name": "Easy - Factory Fire",
                 "description": "Single T2 supplier factory fire. Full visibility. 30 days.",
                 "difficulty": "easy",

@@ -11,15 +11,16 @@ Convenience usage:
         print(result.summary())
 """
 from .base_grader import BaseGrader, GradeResult, AgentFn
+from .grader_baseline import BaselineGrader
 from .grader_easy import EasyGrader
 from .grader_medium import MediumGrader
 from .grader_hard import HardGrader
 
 
 def grade_all(agent_fn: AgentFn, seed: int = 42) -> dict:
-    """Run all three graders and return {task_id: GradeResult}."""
+    """Run all four graders and return {task_id: GradeResult}."""
     results = {}
-    for GraderCls in [EasyGrader, MediumGrader, HardGrader]:
+    for GraderCls in [BaselineGrader, EasyGrader, MediumGrader, HardGrader]:
         grader = GraderCls()
         result = grader.grade(agent_fn, seed=seed)
         results[result.task_id] = result
@@ -28,6 +29,6 @@ def grade_all(agent_fn: AgentFn, seed: int = 42) -> dict:
 
 __all__ = [
     "BaseGrader", "GradeResult", "AgentFn",
-    "EasyGrader", "MediumGrader", "HardGrader",
+    "BaselineGrader", "EasyGrader", "MediumGrader", "HardGrader",
     "grade_all",
 ]
